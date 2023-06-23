@@ -9,3 +9,6 @@ def test_rates():
     assert resp.originalValues.fromAmount == str(amount)
     assert resp.originalValues.fromCurrency == to_curr
     assert resp.originalValues.toCurrency == from_curr
+    assert resp.conversionAmountValue == str(amount)
+    assert resp.conversionFromCurrency == from_curr
+    assert resp.conversionToCurrency == to_curr
