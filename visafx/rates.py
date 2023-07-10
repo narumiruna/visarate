@@ -66,6 +66,16 @@ def rates(amount: float = 1.0,
     try:
         response = Response.parse_obj(resp.json())
     except json.decoder.JSONDecodeError:
-        response = rates(amount, from_curr, to_curr, fee, date - timedelta(days=1))
+        yesterday = date - timedelta(days=1)
+        params = dict(
+            amount=amount,
+            utcConvertedDate=yesterday.strftime('%m/%d/%Y'),
+            exchangedate=yesterday.strftime('%m/%d/%Y'),
+            fromCurr=from_curr,
+            toCurr=to_curr,
+            fee=fee,
+        )
+        resp = scraper.get(url=url, params=params)
+        response = Response.parse_obj(resp.json())
 
     return response
