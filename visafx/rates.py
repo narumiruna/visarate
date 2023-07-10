@@ -3,6 +3,7 @@ from datetime import datetime
 from datetime import timedelta
 
 import cloudscraper
+from loguru import logger
 from pydantic import BaseModel
 from retry import retry
 
@@ -39,12 +40,11 @@ class Response(BaseModel):
     status: str
 
 
-@retry()
-def rates(amount: float = 1.0,
-          from_curr: str = 'TWD',
-          to_curr: str = 'USD',
-          fee: float = 0.0,
-          date: datetime = None) -> Response:
+def _rates(amount: float = 1.0,
+           from_curr: str = 'TWD',
+           to_curr: str = 'USD',
+           fee: float = 0.0,
+           date: datetime = None) -> Response:
     url = 'http://www.visa.com.tw/cmsapi/fx/rates'
 
     if date is None:
@@ -63,19 +63,34 @@ def rates(amount: float = 1.0,
 
     resp = scraper.get(url=url, params=params)
 
-    try:
-        response = Response.parse_obj(resp.json())
-    except json.decoder.JSONDecodeError:
-        yesterday = date - timedelta(days=1)
-        params = dict(
-            amount=amount,
-            utcConvertedDate=yesterday.strftime('%m/%d/%Y'),
-            exchangedate=yesterday.strftime('%m/%d/%Y'),
-            fromCurr=from_curr,
-            toCurr=to_curr,
-            fee=fee,
-        )
-        resp = scraper.get(url=url, params=params)
-        response = Response.parse_obj(resp.json())
+    return Response.parse_obj(resp.json())
 
-    return response
+
+@retry()
+def rates(amount: float = 1.0,
+          from_curr: str = 'TWD',
+          to_curr: str = 'USD',
+          fee: float = 0.0,
+          date: datetime = None) -> Response:
+    if date is None:
+        date = datetime.now()
+
+    try:
+        resp = _rates(
+            amount=amount,
+            from_curr=from_curr,
+            to_curr=to_curr,
+            fee=fee,
+            date=date,
+        )
+    except json.decoder.JSONDecodeError as e:
+        logger.error(e)
+        resp = _rates(
+            amount=amount,
+            from_curr=from_curr,
+            to_curr=to_curr,
+            fee=fee,
+            date=date - timedelta(days=1),
+        )
+
+    return resp
