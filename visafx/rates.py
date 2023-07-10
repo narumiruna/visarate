@@ -66,7 +66,7 @@ def _rates(amount: float = 1.0,
     return Response.parse_obj(resp.json())
 
 
-@retry()
+@retry(delay=1)
 def rates(amount: float = 1.0,
           from_curr: str = 'TWD',
           to_curr: str = 'USD',
