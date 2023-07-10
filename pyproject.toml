@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "visafx"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
-authors = ["なるみ"]
+authors = ["なるみ <toucans-cutouts0f@icloud.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
