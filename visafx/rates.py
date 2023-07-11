@@ -5,7 +5,7 @@ from datetime import timedelta
 import cloudscraper
 from loguru import logger
 from pydantic import BaseModel
-from retry import retry
+from retry.api import retry_call
 
 
 class OriginalValues(BaseModel):
@@ -66,7 +66,6 @@ def _rates(amount: float = 1.0,
     return Response.parse_obj(resp.json())
 
 
-@retry(delay=1)
 def rates(amount: float = 1.0,
           from_curr: str = 'TWD',
           to_curr: str = 'USD',
@@ -76,21 +75,31 @@ def rates(amount: float = 1.0,
         date = datetime.now()
 
     try:
-        resp = _rates(
-            amount=amount,
-            from_curr=from_curr,
-            to_curr=to_curr,
-            fee=fee,
-            date=date,
+        resp = retry_call(
+            _rates,
+            fkwargs=dict(
+                amount=amount,
+                from_curr=from_curr,
+                to_curr=to_curr,
+                fee=fee,
+                date=date,
+            ),
+            tries=100,
+            delay=1,
         )
     except json.decoder.JSONDecodeError as e:
         logger.error(e)
-        resp = _rates(
-            amount=amount,
-            from_curr=from_curr,
-            to_curr=to_curr,
-            fee=fee,
-            date=date - timedelta(days=1),
+        resp = retry_call(
+            _rates,
+            fkwargs=dict(
+                amount=amount,
+                from_curr=from_curr,
+                to_curr=to_curr,
+                fee=fee,
+                date=date - timedelta(days=1),
+            ),
+            tries=100,
+            delay=1,
         )
 
     return resp
