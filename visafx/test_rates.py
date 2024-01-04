@@ -1,4 +1,4 @@
-from .rates import rates
+from .rate import rates
 
 
 def test_rates():
