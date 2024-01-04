@@ -1,10 +1,9 @@
 import json
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 import cloudscraper
 from loguru import logger
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_serializer
 from retry.api import retry_call
 
 
@@ -40,20 +39,48 @@ class Response(BaseModel):
     status: str
 
 
-def _rates(amount: float = 1.0,
-           from_curr: str = 'TWD',
-           to_curr: str = 'USD',
-           fee: float = 0.0,
-           date: datetime = None) -> Response:
-    url = 'http://www.visa.com.tw/cmsapi/fx/rates'
+class RateRequest(BaseModel):
+    amount: float
+    from_curr: str = Field(serialization_alias="fromCurr")
+    to_curr: str = Field(serialization_alias="toCurr")
+    fee: float = Field(default=0.0)
+    utc_converted_date: datetime = Field(
+        default_factory=datetime.utcnow, serialization_alias="utcConvertedDate"
+    )
+    exchangedate: datetime = Field(
+        default_factory=datetime.utcnow, serialization_alias="exchangedate"
+    )
+
+    @field_serializer("exchangedate", "utc_converted_date")
+    def validate_date(self, d: datetime) -> str:
+        return d.strftime("%m/%d/%Y")
+
+    def do(self) -> Response:
+        url = "http://www.visa.com.tw/cmsapi/fx/rates"
+
+        scraper = cloudscraper.create_scraper()
+
+        resp = scraper.get(url=url, params=self.model_dump(by_alias=True))
+
+        return Response(**resp.json())
+
+
+def _rates(
+    amount: float = 1.0,
+    from_curr: str = "TWD",
+    to_curr: str = "USD",
+    fee: float = 0.0,
+    date: datetime = None,
+) -> Response:
+    url = "http://www.visa.com.tw/cmsapi/fx/rates"
 
     if date is None:
         date = datetime.now()
 
     params = dict(
         amount=amount,
-        utcConvertedDate=date.strftime('%m/%d/%Y'),
-        exchangedate=date.strftime('%m/%d/%Y'),
+        utcConvertedDate=date.strftime("%m/%d/%Y"),
+        exchangedate=date.strftime("%m/%d/%Y"),
         fromCurr=from_curr,
         toCurr=to_curr,
         fee=fee,
@@ -66,11 +93,13 @@ def _rates(amount: float = 1.0,
     return Response.parse_obj(resp.json())
 
 
-def rates(amount: float = 1.0,
-          from_curr: str = 'TWD',
-          to_curr: str = 'USD',
-          fee: float = 0.0,
-          date: datetime = None) -> Response:
+def rates(
+    amount: float = 1.0,
+    from_curr: str = "TWD",
+    to_curr: str = "USD",
+    fee: float = 0.0,
+    date: datetime = None,
+) -> Response:
     if date is None:
         date = datetime.now()
 
