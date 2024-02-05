@@ -1,10 +1,10 @@
-from .rate import rates
+from visarate.rate import rates
 
 
 def test_rates():
     amount = 1.0
-    from_curr = 'TWD'
-    to_curr = 'USD'
+    from_curr = "TWD"
+    to_curr = "USD"
     resp = rates(amount=amount, from_curr=from_curr, to_curr=to_curr, fee=0.0)
     assert resp.originalValues.fromAmount == str(amount)
     assert resp.originalValues.fromCurrency == to_curr
