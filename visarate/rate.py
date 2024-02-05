@@ -28,23 +28,10 @@ class OriginalValues(BaseModel):
 
     @field_validator("as_of_date", "last_updated_visa_rate", mode="before")
     @classmethod
-    def validate_datetime(cls, v: int) -> datetime:
-        return datetime.fromtimestamp(v)
-
-    @field_validator(
-        "from_amount",
-        "to_amount_with_visa_rate",
-        "to_amount_with_additional_fee",
-        "fx_rate_visa",
-        "fx_rate_with_additional_fee",
-        mode="before",
-    )
-    @classmethod
-    def validate_float(cls, v: str) -> float:
-        if v == "":
-            return 0
-
-        return float(v)
+    def convert_timestamp(cls, v: int | datetime) -> datetime:
+        if isinstance(v, int):
+            return datetime.fromtimestamp(v)
+        return v
 
 
 class RateResponse(BaseModel):
@@ -65,28 +52,17 @@ class RateResponse(BaseModel):
 
     @field_validator("conversion_input_date", mode="before")
     @classmethod
-    def validate_conversion_input_date(cls, v: str) -> datetime:
-        return datetime.strptime(v, "%m/%d/%Y")
+    def parse_conversion_input_date(cls, v: str | datetime) -> datetime:
+        if isinstance(v, str):
+            return datetime.strptime(v, "%m/%d/%Y")
+        return v
 
     @field_validator("disclaimer_date", mode="before")
     @classmethod
-    def validate_disclaimer_date(cls, v: str) -> datetime:
-        return datetime.strptime(v, "%B %d, %Y")
-
-    @field_validator(
-        "conversion_amount_value",
-        "conversion_bank_fee",
-        "converted_amount",
-        "fx_rate_with_additional_fee",
-        "reverse_amount",
-        mode="before",
-    )
-    @classmethod
-    def validate_float(cls, v: str) -> float:
-        if v == "":
-            return 0
-
-        return float(v)
+    def parse_disclaimer_date(cls, v: str | datetime) -> datetime:
+        if isinstance(v, str):
+            return datetime.strptime(v, "%B %d, %Y")
+        return v
 
 
 class RateRequest(BaseModel):
