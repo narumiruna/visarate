@@ -1,14 +1,14 @@
 install:
 	poetry install
 
-lint: install
-	poetry run flake8 -v .
+lint:
+	poetry run ruff check .
 
-test: install
-	poetry run pytest -v -s --disable-warnings tests
+test:
+	poetry run pytest -v -s --cov=visafx tests
 
-cover: install
-	poetry run coverage run -m pytest -v -s --disable-warnings tests
-	poetry run coverage report -m
+publish:
+	poetry build -f wheel
+	poetry publish
 
-.PHONY: lint test cover
+.PHONY: lint test publish
