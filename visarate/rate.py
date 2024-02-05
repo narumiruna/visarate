@@ -7,6 +7,7 @@ from loguru import logger
 from pydantic import BaseModel
 from pydantic import Field
 from pydantic import field_serializer
+from pydantic import field_validator
 from retry.api import retry_call
 
 
@@ -15,31 +16,76 @@ class OriginalValues(BaseModel):
     from_currency_name: str = Field(validation_alias="fromCurrencyName")
     to_currency: str = Field(validation_alias="toCurrency")
     to_currency_name: str = Field(validation_alias="toCurrencyName")
-    as_of_date: int = Field(validation_alias="asOfDate")
-    from_amount: str = Field(validation_alias="fromAmount")
-    to_amount_with_visa_rate: str = Field(validation_alias="toAmountWithVisaRate")
-    to_amount_with_additional_fee: str = Field(validation_alias="toAmountWithAdditionalFee")
-    fx_rate_visa: str = Field(validation_alias="fxRateVisa")
-    fx_rate_with_additional_fee: str = Field(validation_alias="fxRateWithAdditionalFee")
-    last_updated_visa_rate: int = Field(validation_alias="lastUpdatedVisaRate")
+    as_of_date: datetime = Field(validation_alias="asOfDate")
+    from_amount: float = Field(validation_alias="fromAmount")
+    to_amount_with_visa_rate: float = Field(validation_alias="toAmountWithVisaRate")
+    to_amount_with_additional_fee: float = Field(validation_alias="toAmountWithAdditionalFee")
+    fx_rate_visa: float = Field(validation_alias="fxRateVisa")
+    fx_rate_with_additional_fee: float = Field(validation_alias="fxRateWithAdditionalFee")
+    last_updated_visa_rate: datetime = Field(validation_alias="lastUpdatedVisaRate")
     benchmarks: list = Field(validation_alias="benchmarks")
+
+    @field_validator("as_of_date", "last_updated_visa_rate", mode="before")
+    @classmethod
+    def validate_datetime(cls, v: int) -> datetime:
+        return datetime.fromtimestamp(v)
+
+    @field_validator(
+        "from_amount",
+        "to_amount_with_visa_rate",
+        "to_amount_with_additional_fee",
+        "fx_rate_visa",
+        "fx_rate_with_additional_fee",
+        mode="before",
+    )
+    @classmethod
+    def validate_float(cls, v: str) -> float:
+        if v == "":
+            return 0
+
+        return float(v)
 
 
 class RateResponse(BaseModel):
     original_values: OriginalValues = Field(validation_alias="originalValues")
-    conversion_amount_value: str = Field(validation_alias="conversionAmountValue")
-    conversion_bank_fee: str = Field(validation_alias="conversionBankFee")
-    conversion_input_date: str = Field(validation_alias="conversionInputDate")
+    conversion_amount_value: float = Field(validation_alias="conversionAmountValue")
+    conversion_bank_fee: float = Field(validation_alias="conversionBankFee")
+    conversion_input_date: datetime = Field(validation_alias="conversionInputDate")
     conversion_from_currency: str = Field(validation_alias="conversionFromCurrency")
     conversion_to_currency: str = Field(validation_alias="conversionToCurrency")
     from_currency_name: str = Field(validation_alias="fromCurrencyName")
     to_currency_name: str = Field(validation_alias="toCurrencyName")
-    converted_amount: str = Field(validation_alias="convertedAmount")
+    converted_amount: float = Field(validation_alias="convertedAmount")
     bench_mark_amount: str = Field(validation_alias="benchMarkAmount")
-    fx_rate_with_additional_fee: str = Field(validation_alias="fxRateWithAdditionalFee")
-    reverse_amount: str = Field(validation_alias="reverseAmount")
-    disclaimer_date: str = Field(validation_alias="disclaimerDate")
+    fx_rate_with_additional_fee: float = Field(validation_alias="fxRateWithAdditionalFee")
+    reverse_amount: float = Field(validation_alias="reverseAmount")
+    disclaimer_date: datetime = Field(validation_alias="disclaimerDate")
     status: str = Field(validation_alias="status")
+
+    @field_validator("conversion_input_date", mode="before")
+    @classmethod
+    def validate_conversion_input_date(cls, v: str) -> datetime:
+        return datetime.strptime(v, "%m/%d/%Y")
+
+    @field_validator("disclaimer_date", mode="before")
+    @classmethod
+    def validate_disclaimer_date(cls, v: str) -> datetime:
+        return datetime.strptime(v, "%B %d, %Y")
+
+    @field_validator(
+        "conversion_amount_value",
+        "conversion_bank_fee",
+        "converted_amount",
+        "fx_rate_with_additional_fee",
+        "reverse_amount",
+        mode="before",
+    )
+    @classmethod
+    def validate_float(cls, v: str) -> float:
+        if v == "":
+            return 0
+
+        return float(v)
 
 
 class RateRequest(BaseModel):
