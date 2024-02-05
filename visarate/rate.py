@@ -11,35 +11,35 @@ from retry.api import retry_call
 
 
 class OriginalValues(BaseModel):
-    fromCurrency: str
-    fromCurrencyName: str
-    toCurrency: str
-    toCurrencyName: str
-    asOfDate: int
-    fromAmount: str
-    toAmountWithVisaRate: str
-    toAmountWithAdditionalFee: str
-    fxRateVisa: str
-    fxRateWithAdditionalFee: str
-    lastUpdatedVisaRate: int
-    benchmarks: list
+    from_currency: str = Field(validation_alias="fromCurrency")
+    from_currency_name: str = Field(validation_alias="fromCurrencyName")
+    to_currency: str = Field(validation_alias="toCurrency")
+    to_currency_name: str = Field(validation_alias="toCurrencyName")
+    as_of_date: int = Field(validation_alias="asOfDate")
+    from_amount: str = Field(validation_alias="fromAmount")
+    to_amount_with_visa_rate: str = Field(validation_alias="toAmountWithVisaRate")
+    to_amount_with_additional_fee: str = Field(validation_alias="toAmountWithAdditionalFee")
+    fx_rate_visa: str = Field(validation_alias="fxRateVisa")
+    fx_rate_with_additional_fee: str = Field(validation_alias="fxRateWithAdditionalFee")
+    last_updated_visa_rate: int = Field(validation_alias="lastUpdatedVisaRate")
+    benchmarks: list = Field(validation_alias="benchmarks")
 
 
-class Response(BaseModel):
-    originalValues: OriginalValues
-    conversionAmountValue: str
-    conversionBankFee: str
-    conversionInputDate: str
-    conversionFromCurrency: str
-    conversionToCurrency: str
-    fromCurrencyName: str
-    toCurrencyName: str
-    convertedAmount: str
-    benchMarkAmount: str
-    fxRateWithAdditionalFee: str
-    reverseAmount: str
-    disclaimerDate: str
-    status: str
+class RateResponse(BaseModel):
+    original_values: OriginalValues = Field(validation_alias="originalValues")
+    conversion_amount_value: str = Field(validation_alias="conversionAmountValue")
+    conversion_bank_fee: str = Field(validation_alias="conversionBankFee")
+    conversion_input_date: str = Field(validation_alias="conversionInputDate")
+    conversion_from_currency: str = Field(validation_alias="conversionFromCurrency")
+    conversion_to_currency: str = Field(validation_alias="conversionToCurrency")
+    from_currency_name: str = Field(validation_alias="fromCurrencyName")
+    to_currency_name: str = Field(validation_alias="toCurrencyName")
+    converted_amount: str = Field(validation_alias="convertedAmount")
+    bench_mark_amount: str = Field(validation_alias="benchMarkAmount")
+    fx_rate_with_additional_fee: str = Field(validation_alias="fxRateWithAdditionalFee")
+    reverse_amount: str = Field(validation_alias="reverseAmount")
+    disclaimer_date: str = Field(validation_alias="disclaimerDate")
+    status: str = Field(validation_alias="status")
 
 
 class RateRequest(BaseModel):
@@ -54,14 +54,14 @@ class RateRequest(BaseModel):
     def validate_date(self, d: datetime) -> str:
         return d.strftime("%m/%d/%Y")
 
-    def do(self) -> Response:
+    def do(self) -> RateResponse:
         url = "http://www.visa.com.tw/cmsapi/fx/rates"
 
         scraper = cloudscraper.create_scraper()
 
         resp = scraper.get(url=url, params=self.model_dump(by_alias=True))
 
-        return Response(**resp.json())
+        return RateResponse(**resp.json())
 
 
 def _rates(
@@ -70,7 +70,7 @@ def _rates(
     to_curr: str = "USD",
     fee: float = 0.0,
     date: datetime = None,
-) -> Response:
+) -> RateResponse:
     url = "http://www.visa.com.tw/cmsapi/fx/rates"
 
     if date is None:
@@ -89,16 +89,18 @@ def _rates(
 
     resp = scraper.get(url=url, params=params)
 
-    return Response.parse_obj(resp.json())
+    return RateResponse.model_validate(resp.json())
 
 
-def rates(
+def query_rate(
     amount: float = 1.0,
     from_curr: str = "TWD",
     to_curr: str = "USD",
     fee: float = 0.0,
     date: datetime = None,
-) -> Response:
+    tries: int = 100,
+    delay: int = 1,
+) -> RateResponse:
     if date is None:
         date = datetime.now()
 
@@ -112,8 +114,8 @@ def rates(
                 "fee": fee,
                 "date": date,
             },
-            tries=100,
-            delay=1,
+            tries=tries,
+            delay=delay,
         )
     except json.decoder.JSONDecodeError as e:
         logger.error(e)
@@ -126,8 +128,8 @@ def rates(
                 "fee": fee,
                 "date": date - timedelta(days=1),
             },
-            tries=100,
-            delay=1,
+            tries=tries,
+            delay=delay,
         )
 
     return resp

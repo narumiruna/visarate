@@ -1,1 +1,1 @@
-from .rate import rates
+from .rate import query_rate
