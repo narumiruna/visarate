@@ -5,7 +5,7 @@ description = ""
 authors = ["narumi <toucans-cutouts0f@icloud.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.9"
 cloudscraper = "^1.2.71"
 pydantic = "^2.6.1"
 tenacity = "^8.2.3"
