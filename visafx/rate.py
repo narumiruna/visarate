@@ -1,9 +1,12 @@
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
+from datetime import timedelta
 
 import cloudscraper
 from loguru import logger
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import BaseModel
+from pydantic import Field
+from pydantic import field_serializer
 from retry.api import retry_call
 
 
@@ -44,12 +47,8 @@ class RateRequest(BaseModel):
     from_curr: str = Field(serialization_alias="fromCurr")
     to_curr: str = Field(serialization_alias="toCurr")
     fee: float = Field(default=0.0)
-    utc_converted_date: datetime = Field(
-        default_factory=datetime.utcnow, serialization_alias="utcConvertedDate"
-    )
-    exchangedate: datetime = Field(
-        default_factory=datetime.utcnow, serialization_alias="exchangedate"
-    )
+    utc_converted_date: datetime = Field(default_factory=datetime.utcnow, serialization_alias="utcConvertedDate")
+    exchangedate: datetime = Field(default_factory=datetime.utcnow, serialization_alias="exchangedate")
 
     @field_serializer("exchangedate", "utc_converted_date")
     def validate_date(self, d: datetime) -> str:
@@ -77,14 +76,14 @@ def _rates(
     if date is None:
         date = datetime.now()
 
-    params = dict(
-        amount=amount,
-        utcConvertedDate=date.strftime("%m/%d/%Y"),
-        exchangedate=date.strftime("%m/%d/%Y"),
-        fromCurr=from_curr,
-        toCurr=to_curr,
-        fee=fee,
-    )
+    params = {
+        "amount": amount,
+        "utcConvertedDate": date.strftime("%m/%d/%Y"),
+        "exchangedate": date.strftime("%m/%d/%Y"),
+        "fromCurr": from_curr,
+        "toCurr": to_curr,
+        "fee": fee,
+    }
 
     scraper = cloudscraper.create_scraper()
 
@@ -106,13 +105,13 @@ def rates(
     try:
         resp = retry_call(
             _rates,
-            fkwargs=dict(
-                amount=amount,
-                from_curr=from_curr,
-                to_curr=to_curr,
-                fee=fee,
-                date=date,
-            ),
+            fkwargs={
+                "amount": amount,
+                "from_curr": from_curr,
+                "to_curr": to_curr,
+                "fee": fee,
+                "date": date,
+            },
             tries=100,
             delay=1,
         )
@@ -120,13 +119,13 @@ def rates(
         logger.error(e)
         resp = retry_call(
             _rates,
-            fkwargs=dict(
-                amount=amount,
-                from_curr=from_curr,
-                to_curr=to_curr,
-                fee=fee,
-                date=date - timedelta(days=1),
-            ),
+            fkwargs={
+                "amount": amount,
+                "from_curr": from_curr,
+                "to_curr": to_curr,
+                "fee": fee,
+                "date": date - timedelta(days=1),
+            },
             tries=100,
             delay=1,
         )
