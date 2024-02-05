@@ -111,34 +111,6 @@ class RateRequest(BaseModel):
         return RateResponse(**resp.json())
 
 
-def _rates(
-    amount: float = 1.0,
-    from_curr: str = "TWD",
-    to_curr: str = "USD",
-    fee: float = 0.0,
-    date: datetime = None,
-) -> RateResponse:
-    url = "http://www.visa.com.tw/cmsapi/fx/rates"
-
-    if date is None:
-        date = datetime.now()
-
-    params = {
-        "amount": amount,
-        "utcConvertedDate": date.strftime("%m/%d/%Y"),
-        "exchangedate": date.strftime("%m/%d/%Y"),
-        "fromCurr": from_curr,
-        "toCurr": to_curr,
-        "fee": fee,
-    }
-
-    scraper = cloudscraper.create_scraper()
-
-    resp = scraper.get(url=url, params=params)
-
-    return RateResponse.model_validate(resp.json())
-
-
 @retry
 def query_rate(
     amount: float = 1,
@@ -151,20 +123,20 @@ def query_rate(
         date = datetime.now()
 
     try:
-        resp = _rates(
+        resp = RateRequest(
             amount=amount,
             from_curr=from_curr,
             to_curr=to_curr,
             fee=fee,
             date=date,
-        )
+        ).do()
     except json.decoder.JSONDecodeError:
-        resp = _rates(
+        resp = RateRequest(
             amount=amount,
             from_curr=from_curr,
             to_curr=to_curr,
             fee=fee,
             date=date - timedelta(days=1),
-        )
+        ).do()
 
     return resp
