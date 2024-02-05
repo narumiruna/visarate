@@ -1,16 +1,16 @@
-# visafx
+# visarate
 
 ## Installation
 
 ```sh
-pip install visafx
+pip install visarate
 ```
 
 
 ## Usage
 
 ```python
-from visafx import rates
+from visarate import rates
 
 r = rates(amount=1, from_curr='TWD', to_curr='USD', fee=0.0)
 

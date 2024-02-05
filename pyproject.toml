@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "visafx"
+name = "visarate"
 version = "0.1.5"
 description = ""
 authors = ["narumi <toucans-cutouts0f@icloud.com>"]
