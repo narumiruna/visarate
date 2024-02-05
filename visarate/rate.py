@@ -3,12 +3,13 @@ from datetime import datetime
 from datetime import timedelta
 
 import cloudscraper
-from loguru import logger
 from pydantic import BaseModel
 from pydantic import Field
 from pydantic import field_serializer
 from pydantic import field_validator
-from retry.api import retry_call
+from tenacity import retry
+
+default_timeout = 10
 
 
 class OriginalValues(BaseModel):
@@ -105,7 +106,7 @@ class RateRequest(BaseModel):
 
         scraper = cloudscraper.create_scraper()
 
-        resp = scraper.get(url=url, params=self.model_dump(by_alias=True))
+        resp = scraper.get(url=url, params=self.model_dump(by_alias=True), timeout=default_timeout)
 
         return RateResponse(**resp.json())
 
@@ -138,44 +139,32 @@ def _rates(
     return RateResponse.model_validate(resp.json())
 
 
+@retry
 def query_rate(
-    amount: float = 1.0,
+    amount: float = 1,
     from_curr: str = "TWD",
     to_curr: str = "USD",
-    fee: float = 0.0,
+    fee: float = 0,
     date: datetime = None,
-    tries: int = 100,
-    delay: int = 1,
 ) -> RateResponse:
     if date is None:
         date = datetime.now()
 
     try:
-        resp = retry_call(
-            _rates,
-            fkwargs={
-                "amount": amount,
-                "from_curr": from_curr,
-                "to_curr": to_curr,
-                "fee": fee,
-                "date": date,
-            },
-            tries=tries,
-            delay=delay,
+        resp = _rates(
+            amount=amount,
+            from_curr=from_curr,
+            to_curr=to_curr,
+            fee=fee,
+            date=date,
         )
-    except json.decoder.JSONDecodeError as e:
-        logger.error(e)
-        resp = retry_call(
-            _rates,
-            fkwargs={
-                "amount": amount,
-                "from_curr": from_curr,
-                "to_curr": to_curr,
-                "fee": fee,
-                "date": date - timedelta(days=1),
-            },
-            tries=tries,
-            delay=delay,
+    except json.decoder.JSONDecodeError:
+        resp = _rates(
+            amount=amount,
+            from_curr=from_curr,
+            to_curr=to_curr,
+            fee=fee,
+            date=date - timedelta(days=1),
         )
 
     return resp
