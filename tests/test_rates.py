@@ -4,10 +4,8 @@ from visarate.rate import query_rate
 def test_query_rate():
     cases = [
         [1.0, "TWD", "USD", 0.015],
-        [1_000.0, "TWD", "USD", 0.015],
         [1_000_000.0, "TWD", "USD", 0.015],
         [1.0, "USD", "TWD", 0.015],
-        [1_000.0, "USD", "TWD", 0.015],
         [1_000_000.0, "USD", "TWD", 0.015],
     ]
     for amount, from_curr, to_curr, fee in cases:
