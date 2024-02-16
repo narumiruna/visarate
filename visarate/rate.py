@@ -134,7 +134,8 @@ def query_rate(
             from_curr=from_curr,
             to_curr=to_curr,
             fee=fee,
-            date=date,
+            utc_converted_date=date,
+            exchangedate=date,
         ).do()
     except json.decoder.JSONDecodeError:
         resp = RateRequest(
@@ -142,7 +143,8 @@ def query_rate(
             from_curr=from_curr,
             to_curr=to_curr,
             fee=fee,
-            date=date - timedelta(days=1),
+            utc_converted_date=date - timedelta(days=1),
+            exchangedate=date - timedelta(days=1),
         ).do()
 
     return resp
