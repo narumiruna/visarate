@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import locale
 from datetime import datetime
 from datetime import timedelta
 
@@ -35,6 +36,20 @@ class OriginalValues(BaseModel):
             return datetime.fromtimestamp(v)
         return v
 
+    @field_validator(
+        "from_amount",
+        "to_amount_with_visa_rate",
+        "to_amount_with_additional_fee",
+        "fx_rate_visa",
+        "fx_rate_with_additional_fee",
+        mode="before",
+    )
+    @classmethod
+    def convert_str(cls, v: str) -> float:
+        if isinstance(v, str):
+            return float(v.replace(",", ""))
+        return v
+
 
 class RateResponse(BaseModel):
     original_values: OriginalValues = Field(validation_alias="originalValues")
@@ -64,6 +79,20 @@ class RateResponse(BaseModel):
     def parse_disclaimer_date(cls, v: str | datetime) -> datetime:
         if isinstance(v, str):
             return datetime.strptime(v, "%B %d, %Y")
+        return v
+
+    @field_validator(
+        "conversion_amount_value",
+        "conversion_bank_fee",
+        "converted_amount",
+        "fx_rate_with_additional_fee",
+        "reverse_amount",
+        mode="before",
+    )
+    @classmethod
+    def convert_str(cls, v: str) -> float:
+        if isinstance(v, str):
+            return float(v.replace(",", ""))
         return v
 
 
