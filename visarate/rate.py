@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 from datetime import timedelta
 
-import cloudscraper
+import requests
 from pydantic import BaseModel
 from pydantic import Field
 from pydantic import field_serializer
@@ -108,11 +108,16 @@ class RateRequest(BaseModel):
         return d.strftime("%m/%d/%Y")
 
     def do(self) -> RateResponse:
-        url = "http://www.visa.com.tw/cmsapi/fx/rates"
+        url = "https://www.visa.com.tw/cmsapi/fx/rates"
 
-        scraper = cloudscraper.create_scraper()
+        headers = {"User-Agent": "Python"}
 
-        resp = scraper.get(url=url, params=self.model_dump(by_alias=True), timeout=default_timeout)
+        resp = requests.get(
+            url=url,
+            params=self.model_dump(by_alias=True),
+            headers=headers,
+            timeout=default_timeout,
+        )
 
         return RateResponse(**resp.json())
 
