@@ -103,7 +103,7 @@ class RateRequest(BaseModel):
     utc_converted_date: datetime = Field(default_factory=datetime.utcnow, serialization_alias="utcConvertedDate")
     exchangedate: datetime = Field(default_factory=datetime.utcnow, serialization_alias="exchangedate")
 
-    @field_serializer("exchangedate", "utc_converted_date")
+    @field_serializer("utc_converted_date", "exchangedate")
     def validate_date(self, d: datetime) -> str:
         return d.strftime("%m/%d/%Y")
 
