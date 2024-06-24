@@ -126,7 +126,7 @@ def query_rate(
     from_curr: str = "TWD",
     to_curr: str = "USD",
     fee: float = 0,
-    date: datetime = None,
+    date: datetime | None = None,
 ) -> RateResponse:
     if date is None:
         date = datetime.now()
