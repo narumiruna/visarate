@@ -118,8 +118,9 @@ class RateRequest(BaseModel):
             headers=headers,
             timeout=default_timeout,
         )
+        resp.raise_for_status()
 
-        return RateResponse(**resp.json())
+        return RateResponse.model_validate(resp.json())
 
 
 @retry
@@ -142,7 +143,7 @@ def query_rate(
             utc_converted_date=date,
             exchangedate=date,
         ).do()
-    except json.decoder.JSONDecodeError:
+    except requests.exceptions.HTTPError:
         resp = RateRequest(
             amount=amount,
             from_curr=from_curr,
