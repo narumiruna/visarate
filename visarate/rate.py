@@ -1,17 +1,14 @@
 from __future__ import annotations
 
-import json
 from datetime import datetime
 from datetime import timedelta
 
-import requests
+import httpx
 from pydantic import BaseModel
 from pydantic import Field
 from pydantic import field_serializer
 from pydantic import field_validator
 from tenacity import retry
-
-default_timeout = 10
 
 
 class OriginalValues(BaseModel):
@@ -100,8 +97,8 @@ class RateRequest(BaseModel):
     from_curr: str = Field(serialization_alias="fromCurr")
     to_curr: str = Field(serialization_alias="toCurr")
     fee: float = Field(default=0.0)
-    utc_converted_date: datetime = Field(default_factory=datetime.utcnow, serialization_alias="utcConvertedDate")
-    exchangedate: datetime = Field(default_factory=datetime.utcnow, serialization_alias="exchangedate")
+    utc_converted_date: datetime = Field(default_factory=datetime.now, serialization_alias="utcConvertedDate")
+    exchangedate: datetime = Field(default_factory=datetime.now, serialization_alias="exchangedate")
 
     @field_serializer("utc_converted_date", "exchangedate")
     def validate_date(self, d: datetime) -> str:
@@ -112,11 +109,11 @@ class RateRequest(BaseModel):
 
         headers = {"User-Agent": "Python"}
 
-        resp = requests.get(
+        resp = httpx.get(
             url=url,
             params=self.model_dump(by_alias=True),
             headers=headers,
-            timeout=default_timeout,
+            timeout=10,
         )
         resp.raise_for_status()
 
@@ -143,7 +140,7 @@ def query_rate(
             utc_converted_date=date,
             exchangedate=date,
         ).do()
-    except requests.exceptions.HTTPError:
+    except httpx.HTTPStatusError:
         resp = RateRequest(
             amount=amount,
             from_curr=from_curr,
