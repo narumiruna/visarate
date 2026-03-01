@@ -4,12 +4,15 @@ from datetime import UTC
 from datetime import datetime
 from datetime import timedelta
 
-import httpx
+from curl_cffi import requests as curl_requests
+from curl_cffi.requests.exceptions import RequestException as CurlRequestException
 from pydantic import BaseModel
 from pydantic import Field
 from pydantic import field_serializer
 from pydantic import field_validator
 from tenacity import retry
+from tenacity import retry_if_exception_type
+from tenacity import stop_after_attempt
 
 
 class OriginalValues(BaseModel):
@@ -107,24 +110,24 @@ class RateRequest(BaseModel):
 
     def do(self) -> RateResponse:
         url = "https://www.visa.com.tw/cmsapi/fx/rates"
+        params = self.model_dump(by_alias=True)
 
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"  # noqa
-        }
-
-        resp = httpx.get(
+        resp = curl_requests.get(
             url=url,
-            params=self.model_dump(by_alias=True),
-            headers=headers,
-            timeout=10,
-            follow_redirects=True,
+            params=params,
+            impersonate="chrome",
+            timeout=20,
         )
-        resp.raise_for_status()
 
+        resp.raise_for_status()
         return RateResponse.model_validate(resp.json())
 
 
-@retry
+@retry(
+    stop=stop_after_attempt(3),
+    retry=retry_if_exception_type(CurlRequestException),
+    reraise=True,
+)
 def query_rate(
     amount: float = 1,
     from_curr: str = "TWD",
@@ -144,7 +147,7 @@ def query_rate(
             utc_converted_date=date,
             exchangedate=date,
         ).do()
-    except httpx.HTTPStatusError:
+    except CurlRequestException:
         resp = RateRequest(
             amount=amount,
             from_curr=from_curr,
