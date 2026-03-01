@@ -23,8 +23,8 @@ logger = logging.getLogger(__name__)
 )
 def query_rate(
     amount: float = 1,
-    from_curr: str = "TWD",
-    to_curr: str = "USD",
+    quote_currency: str = "TWD",
+    base_currency: str = "USD",
     fee: float = 0,
     date: datetime | None = None,
 ) -> RateResponse:
@@ -33,8 +33,8 @@ def query_rate(
 
     req = RateRequest(
         amount=amount,
-        from_curr=from_curr,
-        to_curr=to_curr,
+        from_curr=quote_currency,
+        to_curr=base_currency,
         fee=fee,
         utc_converted_date=date,
         exchangedate=date,

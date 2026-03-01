@@ -4,9 +4,15 @@ from visarate import query_rate
 
 
 def main() -> None:
-    resp = query_rate(amount=1, from_curr="TWD", to_curr="USD", fee=0.0)
+    resp = query_rate(
+        amount=1,
+        quote_currency="TWD",  # quote currency
+        base_currency="USD",  # base currency
+        fee=0.0,
+    )
     print(resp)
-    resp = query_rate(amount=1, from_curr="USD", to_curr="TWD", fee=0.0)
+
+    resp = query_rate(amount=1, quote_currency="USD", base_currency="TWD", fee=0.0)
     print(resp)
 
 
