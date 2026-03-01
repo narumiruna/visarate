@@ -1,5 +1,5 @@
-from .rate import RateRequest
-from .rate import RateResponse
+from .api import RateRequest
+from .api import RateResponse
 from .rate import query
 
 __all__ = [
