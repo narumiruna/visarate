@@ -31,24 +31,23 @@ def query(
     if date is None:
         date = datetime.now(tz=UTC)
 
+    req = RateRequest(
+        amount=amount,
+        from_curr=from_curr,
+        to_curr=to_curr,
+        fee=fee,
+        utc_converted_date=date,
+        exchangedate=date,
+    )
+
     try:
-        resp = RateRequest(
-            amount=amount,
-            from_curr=from_curr,
-            to_curr=to_curr,
-            fee=fee,
-            utc_converted_date=date,
-            exchangedate=date,
-        ).do()
+        resp = req.do()
     except CurlRequestException:
         logger.warning("Request failed, retrying with previous date...")
-        resp = RateRequest(
-            amount=amount,
-            from_curr=from_curr,
-            to_curr=to_curr,
-            fee=fee,
-            utc_converted_date=date - timedelta(days=1),
-            exchangedate=date - timedelta(days=1),
-        ).do()
+
+        req.utc_converted_date = date - timedelta(days=1)
+        req.exchangedate = date - timedelta(days=1)
+
+        resp = req.do()
 
     return resp
