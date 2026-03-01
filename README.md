@@ -10,9 +10,9 @@ pip install visarate
 ## Usage
 
 ```python
-import visarate
+from visarate import query_rate
 
-r = visarate.query(amount=1, from_curr='TWD', to_curr='USD', fee=0.0)
+r = query_rate(amount=1, from_curr='TWD', to_curr='USD', fee=0.0)
 
 print(f'converted amount: {r.converted_amount}')
 ```
