@@ -31,6 +31,8 @@ pre_commit_hooks = ["uv lock", "git add uv.lock"]
 
 [tool.pytest]
 filterwarnings = ["ignore::DeprecationWarning"]
+log_cli        = true
+log_cli_level  = "INFO"
 
 [tool.ruff]
 line-length = 120

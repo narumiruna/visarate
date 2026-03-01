@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import UTC
 from datetime import datetime
 from datetime import timedelta
@@ -13,6 +14,8 @@ from pydantic import field_validator
 from tenacity import retry
 from tenacity import retry_if_exception_type
 from tenacity import stop_after_attempt
+
+logger = logging.getLogger(__name__)
 
 
 class OriginalValues(BaseModel):
@@ -118,9 +121,14 @@ class RateRequest(BaseModel):
             impersonate="chrome",
             timeout=20,
         )
+        logger.debug("Request URL: %s", resp.url)
 
         resp.raise_for_status()
-        return RateResponse.model_validate(resp.json())
+
+        data = resp.json()
+        logger.debug("Response Data: %s", data)
+
+        return RateResponse.model_validate(data)
 
 
 @retry(
@@ -148,6 +156,7 @@ def query(
             exchangedate=date,
         ).do()
     except CurlRequestException:
+        logger.warning("Request failed, retrying with previous date...")
         resp = RateRequest(
             amount=amount,
             from_curr=from_curr,
