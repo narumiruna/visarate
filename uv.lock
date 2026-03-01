@@ -469,7 +469,7 @@ wheels = [
 
 [[package]]
 name = "visarate"
-version = "0.6.0"
+version = "0.7.0"
 source = { editable = "." }
 dependencies = [
     { name = "curl-cffi" },
