@@ -1,9 +1,9 @@
 from .rate import RateRequest
 from .rate import RateResponse
-from .rate import query_rate
+from .rate import query
 
 __all__ = [
     "RateRequest",
     "RateResponse",
-    "query_rate",
+    "query",
 ]

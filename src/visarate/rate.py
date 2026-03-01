@@ -128,7 +128,7 @@ class RateRequest(BaseModel):
     retry=retry_if_exception_type(CurlRequestException),
     reraise=True,
 )
-def query_rate(
+def query(
     amount: float = 1,
     from_curr: str = "TWD",
     to_curr: str = "USD",
