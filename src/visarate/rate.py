@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
     retry=retry_if_exception_type(CurlRequestException),
     reraise=True,
 )
-def query(
+def query_rate(
     amount: float = 1,
     from_curr: str = "TWD",
     to_curr: str = "USD",

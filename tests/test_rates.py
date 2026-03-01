@@ -1,6 +1,6 @@
 import pytest
 
-from visarate.rate import query
+from visarate.rate import query_rate
 
 
 @pytest.mark.parametrize(
@@ -13,7 +13,7 @@ from visarate.rate import query
     ],
 )
 def test_query(amount: float, from_curr: str, to_curr: str, fee: float) -> None:
-    resp = query(amount=amount, from_curr=from_curr, to_curr=to_curr, fee=fee)
+    resp = query_rate(amount=amount, from_curr=from_curr, to_curr=to_curr, fee=fee)
     assert resp.original_values.from_amount == amount
     assert resp.original_values.from_currency == to_curr
     assert resp.original_values.to_currency == from_curr
