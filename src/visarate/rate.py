@@ -54,7 +54,6 @@ def query_rate(
         from_curr=quote_currency,
         to_curr=base_currency,
         fee=fee,
-        utc_converted_date=date,
         exchangedate=date,
     )
 
@@ -63,7 +62,6 @@ def query_rate(
     except CurlRequestException:
         logger.warning("Request failed, retrying with previous date...")
 
-        req.utc_converted_date = date - timedelta(days=1)
         req.exchangedate = date - timedelta(days=1)
 
         resp = req.do()

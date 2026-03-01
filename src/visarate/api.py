@@ -4,12 +4,14 @@ import logging
 from datetime import UTC
 from datetime import datetime
 from decimal import Decimal
+from typing import Self
 
 from curl_cffi import requests as curl_requests
 from pydantic import BaseModel
 from pydantic import Field
 from pydantic import field_serializer
 from pydantic import field_validator
+from pydantic import model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -100,16 +102,24 @@ class RateRequest(BaseModel):
     from_curr: str = Field(serialization_alias="fromCurr")
     to_curr: str = Field(serialization_alias="toCurr")
     fee: float = Field(default=0.0)
-    utc_converted_date: datetime = Field(default_factory=datetime.now, serialization_alias="utcConvertedDate")
-    exchangedate: datetime = Field(default_factory=datetime.now, serialization_alias="exchangedate")
+    exchangedate: datetime = Field(default=datetime.now(tz=UTC), serialization_alias="exchangedate")
+    utc_converted_date: datetime | None = Field(default=None, serialization_alias="utcConvertedDate")
 
-    @field_serializer("utc_converted_date", "exchangedate")
+    @field_serializer("exchangedate", "utc_converted_date")
     def validate_date(self, d: datetime) -> str:
         return d.strftime("%m/%d/%Y")
 
+    @model_validator(mode="after")
+    def set_utc_converted_date(self) -> Self:
+        if self.utc_converted_date is None:
+            self.utc_converted_date = self.exchangedate.astimezone(UTC)
+        return self
+
     def do(self) -> RateResponse:
         url = "https://www.visa.com.tw/cmsapi/fx/rates"
+
         params = self.model_dump(by_alias=True)
+        logger.debug("Request Parameters: %s", params)
 
         resp = curl_requests.get(
             url=url,
