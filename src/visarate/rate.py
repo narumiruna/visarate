@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC
 from datetime import datetime
 from datetime import timedelta
 
@@ -29,7 +30,7 @@ class OriginalValues(BaseModel):
     @classmethod
     def convert_timestamp(cls, v: int | datetime) -> datetime:
         if isinstance(v, int):
-            return datetime.fromtimestamp(v)
+            return datetime.fromtimestamp(v, tz=UTC)
         return v
 
     @field_validator(
@@ -67,14 +68,14 @@ class RateResponse(BaseModel):
     @classmethod
     def parse_conversion_input_date(cls, v: str | datetime) -> datetime:
         if isinstance(v, str):
-            return datetime.strptime(v, "%m/%d/%Y")
+            return datetime.strptime(v, "%m/%d/%Y").replace(tzinfo=UTC)
         return v
 
     @field_validator("disclaimer_date", mode="before")
     @classmethod
     def parse_disclaimer_date(cls, v: str | datetime) -> datetime:
         if isinstance(v, str):
-            return datetime.strptime(v, "%B %d, %Y")
+            return datetime.strptime(v, "%B %d, %Y").replace(tzinfo=UTC)
         return v
 
     @field_validator(
@@ -107,15 +108,20 @@ class RateRequest(BaseModel):
     def do(self) -> RateResponse:
         url = "https://www.visa.com.tw/cmsapi/fx/rates"
 
-        headers = {"User-Agent": "Python"}
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"  # noqa
+        }
 
         resp = httpx.get(
             url=url,
             params=self.model_dump(by_alias=True),
             headers=headers,
             timeout=10,
+            follow_redirects=True,
         )
+        print(resp.url)
         resp.raise_for_status()
+        print(resp.json())
 
         return RateResponse.model_validate(resp.json())
 
@@ -129,7 +135,7 @@ def query_rate(
     date: datetime | None = None,
 ) -> RateResponse:
     if date is None:
-        date = datetime.now()
+        date = datetime.now(tz=UTC)
 
     try:
         resp = RateRequest(
