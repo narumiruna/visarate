@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from datetime import UTC
 from datetime import datetime
 from datetime import timedelta
@@ -16,6 +17,23 @@ from visarate.api import RateResponse
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class Rate:
+    base_currency: str
+    quote_currency: str
+    rate: float
+    updated_at: datetime
+
+
+def convert_to_rate(resp: RateResponse) -> Rate:
+    return Rate(
+        base_currency=resp.original_values.from_currency,
+        quote_currency=resp.original_values.to_currency,
+        rate=float(resp.original_values.fx_rate_visa),
+        updated_at=resp.original_values.last_updated_visa_rate,
+    )
+
+
 @retry(
     stop=stop_after_attempt(3),
     retry=retry_if_exception_type(CurlRequestException),
@@ -23,11 +41,11 @@ logger = logging.getLogger(__name__)
 )
 def query_rate(
     amount: float = 1,
-    quote_currency: str = "TWD",
     base_currency: str = "USD",
+    quote_currency: str = "TWD",
     fee: float = 0,
     date: datetime | None = None,
-) -> RateResponse:
+) -> Rate:
     if date is None:
         date = datetime.now(tz=UTC)
 
@@ -50,4 +68,4 @@ def query_rate(
 
         resp = req.do()
 
-    return resp
+    return convert_to_rate(resp)
