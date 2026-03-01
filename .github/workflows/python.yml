@@ -13,27 +13,18 @@ jobs:
   python:
     runs-on: ubuntu-latest
     strategy:
-      max-parallel: 1
       matrix:
-        python-version: ["3.11"]
-        poetry-version: ["1.8.3"]
+        python-version: ["3.12"]
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: narumiruna/setup-poetry@v1
-        with:
-          poetry-version: ${{ matrix.poetry-version }}
       - name: Install dependencies
-        run: poetry install --sync
+        run: uv sync
       - name: Lint
-        run: poetry run ruff check .
+        run: uv run ruff check .
       - name: Type check
-        run: poetry run mypy --install-types --non-interactive .
+        run: uv run ty check .
       - name: Test
-        run: poetry run pytest -v -s --cov=visarate --cov-report=xml tests
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: uv run pytest -v -s --cov=src --cov-report=xml tests

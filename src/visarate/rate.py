@@ -1,14 +1,18 @@
 from __future__ import annotations
 
+from datetime import UTC
 from datetime import datetime
 from datetime import timedelta
 
-import httpx
+from curl_cffi import requests as curl_requests
+from curl_cffi.requests.exceptions import RequestException as CurlRequestException
 from pydantic import BaseModel
 from pydantic import Field
 from pydantic import field_serializer
 from pydantic import field_validator
 from tenacity import retry
+from tenacity import retry_if_exception_type
+from tenacity import stop_after_attempt
 
 
 class OriginalValues(BaseModel):
@@ -29,7 +33,7 @@ class OriginalValues(BaseModel):
     @classmethod
     def convert_timestamp(cls, v: int | datetime) -> datetime:
         if isinstance(v, int):
-            return datetime.fromtimestamp(v)
+            return datetime.fromtimestamp(v, tz=UTC)
         return v
 
     @field_validator(
@@ -67,14 +71,14 @@ class RateResponse(BaseModel):
     @classmethod
     def parse_conversion_input_date(cls, v: str | datetime) -> datetime:
         if isinstance(v, str):
-            return datetime.strptime(v, "%m/%d/%Y")
+            return datetime.strptime(v, "%m/%d/%Y").replace(tzinfo=UTC)
         return v
 
     @field_validator("disclaimer_date", mode="before")
     @classmethod
     def parse_disclaimer_date(cls, v: str | datetime) -> datetime:
         if isinstance(v, str):
-            return datetime.strptime(v, "%B %d, %Y")
+            return datetime.strptime(v, "%B %d, %Y").replace(tzinfo=UTC)
         return v
 
     @field_validator(
@@ -106,22 +110,25 @@ class RateRequest(BaseModel):
 
     def do(self) -> RateResponse:
         url = "https://www.visa.com.tw/cmsapi/fx/rates"
+        params = self.model_dump(by_alias=True)
 
-        headers = {"User-Agent": "Python"}
-
-        resp = httpx.get(
+        resp = curl_requests.get(
             url=url,
-            params=self.model_dump(by_alias=True),
-            headers=headers,
-            timeout=10,
+            params=params,
+            impersonate="chrome",
+            timeout=20,
         )
-        resp.raise_for_status()
 
+        resp.raise_for_status()
         return RateResponse.model_validate(resp.json())
 
 
-@retry
-def query_rate(
+@retry(
+    stop=stop_after_attempt(3),
+    retry=retry_if_exception_type(CurlRequestException),
+    reraise=True,
+)
+def query(
     amount: float = 1,
     from_curr: str = "TWD",
     to_curr: str = "USD",
@@ -129,7 +136,7 @@ def query_rate(
     date: datetime | None = None,
 ) -> RateResponse:
     if date is None:
-        date = datetime.now()
+        date = datetime.now(tz=UTC)
 
     try:
         resp = RateRequest(
@@ -140,7 +147,7 @@ def query_rate(
             utc_converted_date=date,
             exchangedate=date,
         ).do()
-    except httpx.HTTPStatusError:
+    except CurlRequestException:
         resp = RateRequest(
             amount=amount,
             from_curr=from_curr,
