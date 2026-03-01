@@ -17,6 +17,8 @@ def main() -> None:
         fee=2,  # 2% fee
         exchangedate=datetime.now(tz=ZoneInfo("Asia/Taipei")),  # Transaction date
     )
+    print(req)
+
     resp = req.do()
     print(resp)
 
