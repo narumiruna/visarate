@@ -14,10 +14,10 @@ from visarate.rate import query_rate
 )
 def test_query_rate(amount: float, from_curr: str, to_curr: str, fee: float) -> None:
     resp = query_rate(amount=amount, quote_currency=from_curr, base_currency=to_curr, fee=fee)
-    assert resp.original_values.from_amount == amount
+    assert float(resp.original_values.from_amount) == amount
     assert resp.original_values.from_currency == to_curr
     assert resp.original_values.to_currency == from_curr
-    assert resp.conversion_amount_value == amount
+    assert float(resp.conversion_amount_value) == amount
     assert resp.conversion_from_currency == from_curr
     assert resp.conversion_to_currency == to_curr
-    assert resp.conversion_bank_fee == fee
+    assert float(resp.conversion_bank_fee) == fee

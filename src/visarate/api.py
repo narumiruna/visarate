@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from datetime import UTC
 from datetime import datetime
+from decimal import Decimal
 
 from curl_cffi import requests as curl_requests
 from pydantic import BaseModel
@@ -19,11 +20,11 @@ class OriginalValues(BaseModel):
     to_currency: str = Field(validation_alias="toCurrency")
     to_currency_name: str = Field(validation_alias="toCurrencyName")
     as_of_date: datetime = Field(validation_alias="asOfDate")
-    from_amount: float = Field(validation_alias="fromAmount")
-    to_amount_with_visa_rate: float = Field(validation_alias="toAmountWithVisaRate")
-    to_amount_with_additional_fee: float = Field(validation_alias="toAmountWithAdditionalFee")
-    fx_rate_visa: float = Field(validation_alias="fxRateVisa")
-    fx_rate_with_additional_fee: float = Field(validation_alias="fxRateWithAdditionalFee")
+    from_amount: Decimal = Field(validation_alias="fromAmount")
+    to_amount_with_visa_rate: Decimal = Field(validation_alias="toAmountWithVisaRate")
+    to_amount_with_additional_fee: Decimal = Field(validation_alias="toAmountWithAdditionalFee")
+    fx_rate_visa: Decimal = Field(validation_alias="fxRateVisa")
+    fx_rate_with_additional_fee: Decimal = Field(validation_alias="fxRateWithAdditionalFee")
     last_updated_visa_rate: datetime = Field(validation_alias="lastUpdatedVisaRate")
     benchmarks: list = Field(validation_alias="benchmarks")
 
@@ -43,25 +44,25 @@ class OriginalValues(BaseModel):
         mode="before",
     )
     @classmethod
-    def convert_str(cls, v: str) -> float:
+    def convert_str(cls, v: str) -> Decimal:
         if isinstance(v, str):
-            return float(v.replace(",", ""))
+            return Decimal(v.replace(",", ""))
         return v
 
 
 class RateResponse(BaseModel):
     original_values: OriginalValues = Field(validation_alias="originalValues")
-    conversion_amount_value: float = Field(validation_alias="conversionAmountValue")
-    conversion_bank_fee: float = Field(validation_alias="conversionBankFee")
+    conversion_amount_value: Decimal = Field(validation_alias="conversionAmountValue")
+    conversion_bank_fee: Decimal = Field(validation_alias="conversionBankFee")
     conversion_input_date: datetime = Field(validation_alias="conversionInputDate")
     conversion_from_currency: str = Field(validation_alias="conversionFromCurrency")
     conversion_to_currency: str = Field(validation_alias="conversionToCurrency")
     from_currency_name: str = Field(validation_alias="fromCurrencyName")
     to_currency_name: str = Field(validation_alias="toCurrencyName")
-    converted_amount: float = Field(validation_alias="convertedAmount")
+    converted_amount: Decimal = Field(validation_alias="convertedAmount")
     bench_mark_amount: str = Field(validation_alias="benchMarkAmount")
-    fx_rate_with_additional_fee: float = Field(validation_alias="fxRateWithAdditionalFee")
-    reverse_amount: float = Field(validation_alias="reverseAmount")
+    fx_rate_with_additional_fee: Decimal = Field(validation_alias="fxRateWithAdditionalFee")
+    reverse_amount: Decimal = Field(validation_alias="reverseAmount")
     disclaimer_date: datetime = Field(validation_alias="disclaimerDate")
     status: str = Field(validation_alias="status")
 
@@ -88,9 +89,9 @@ class RateResponse(BaseModel):
         mode="before",
     )
     @classmethod
-    def convert_str(cls, v: str) -> float:
+    def convert_str(cls, v: str) -> Decimal:
         if isinstance(v, str):
-            return float(v.replace(",", ""))
+            return Decimal(v.replace(",", ""))
         return v
 
 
